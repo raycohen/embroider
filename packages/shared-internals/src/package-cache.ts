@@ -4,6 +4,21 @@ import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep } from 'path';
 
+const existsCache = new Map<string, boolean>();
+
+function getCachedExists(path: string): boolean {
+  if (existsCache.has(path)) {
+    const cachedExists = existsCache.get(path);
+    if (cachedExists !== undefined) {
+      return cachedExists;
+    }
+  }
+
+  const exists = existsSync(path);
+  existsCache.set(path, exists);
+  return exists;
+}
+
 export default class PackageCache {
   constructor(public appRoot: string) {}
 
@@ -55,7 +70,7 @@ export default class PackageCache {
       if (this.rootCache.has(candidate)) {
         return this.rootCache.get(candidate);
       }
-      if (existsSync([...usedSegments, 'package.json'].join(sep))) {
+      if (getCachedExists([...usedSegments, 'package.json'].join(sep))) {
         return this.get(candidate);
       }
     }
